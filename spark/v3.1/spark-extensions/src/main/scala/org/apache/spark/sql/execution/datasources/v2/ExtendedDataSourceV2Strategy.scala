@@ -52,6 +52,7 @@ import org.apache.spark.sql.execution.FilterExec
 import org.apache.spark.sql.execution.LeafExecNode
 import org.apache.spark.sql.execution.ProjectExec
 import org.apache.spark.sql.execution.SparkPlan
+import org.apache.spark.sql.execution.SparkPlanIO
 import scala.collection.JavaConverters._
 
 case class ExtendedDataSourceV2Strategy(spark: SparkSession) extends Strategy {
@@ -104,8 +105,17 @@ case class ExtendedDataSourceV2Strategy(spark: SparkSession) extends Strategy {
       val batchExec = ExtendedBatchScanExec(output, scan)
       withProjectAndFilter(project, filters, batchExec, !batchExec.supportsColumnar) :: Nil
 
+    case ReplaceData(relation: DataSourceV2Relation, batchWrite, query) =>
+      // Row-level writes need the target table to report output column values.
+      ReplaceDataExec(
+        batchWrite,
+        Some(SparkPlanIO.formatV2TableName(relation.table)),
+        Some(relation.table),
+        refreshCache(relation),
+        planLater(query)) :: Nil
+
     case ReplaceData(relation, batchWrite, query) =>
-      ReplaceDataExec(batchWrite, refreshCache(relation), planLater(query)) :: Nil
+      ReplaceDataExec(batchWrite, None, None, refreshCache(relation), planLater(query)) :: Nil
 
     case MergeInto(mergeIntoParams, output, child) =>
       MergeIntoExec(mergeIntoParams, output, planLater(child)) :: Nil
