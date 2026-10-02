@@ -104,8 +104,17 @@ case class ExtendedDataSourceV2Strategy(spark: SparkSession) extends Strategy {
       val batchExec = ExtendedBatchScanExec(output, scan)
       withProjectAndFilter(project, filters, batchExec, !batchExec.supportsColumnar) :: Nil
 
+    case ReplaceData(relation: DataSourceV2Relation, batchWrite, query) =>
+      // Retain the target table through planning so the physical write can derive its
+      // output name and use the table's metadata.
+      ReplaceDataExec(
+        batchWrite,
+        Some(relation.table),
+        refreshCache(relation),
+        planLater(query)) :: Nil
+
     case ReplaceData(relation, batchWrite, query) =>
-      ReplaceDataExec(batchWrite, refreshCache(relation), planLater(query)) :: Nil
+      ReplaceDataExec(batchWrite, None, refreshCache(relation), planLater(query)) :: Nil
 
     case MergeInto(mergeIntoParams, output, child) =>
       MergeIntoExec(mergeIntoParams, output, planLater(child)) :: Nil

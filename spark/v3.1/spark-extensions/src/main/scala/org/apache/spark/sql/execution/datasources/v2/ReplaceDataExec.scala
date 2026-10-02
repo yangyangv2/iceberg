@@ -20,18 +20,25 @@
 package org.apache.spark.sql.execution.datasources.v2
 
 import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.connector.catalog.Table
 import org.apache.spark.sql.connector.write.BatchWrite
-import org.apache.spark.sql.execution.SparkPlan
+import org.apache.spark.sql.execution.{SparkPlan, SparkPlanIO}
 
 case class ReplaceDataExec(
     batchWrite: BatchWrite,
+    targetTable: Option[Table],
     refreshCache: () => Unit,
     query: SparkPlan) extends V2TableWriteExec {
+
+  val targetTableName: Option[String] = targetTable.map(table => SparkPlanIO.formatV2TableName(table))
+
+  // The internal merge scan does not expose the target through the write RDD.
+  override protected def lineageInputs: Seq[String] = targetTableName.toSeq
 
   override protected def run(): Seq[InternalRow] = {
     // calling prepare() ensures we execute DynamicFileFilter if present
     prepare()
-    val writtenRows = writeWithV2(batchWrite)
+    val writtenRows = writeWithV2(batchWrite, targetTableName, targetTable)
     refreshCache()
     writtenRows
   }
