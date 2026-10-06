@@ -51,17 +51,26 @@ import org.apache.spark.sql.connector.iceberg.expressions.SortOrder
 object ExtendedV2Writes extends Rule[LogicalPlan] {
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan transformDown {
-    case a @ AppendData(r: DataSourceV2Relation, query, _, _)
-      if isIcebergRelation(r) && !alreadyPrepared(query) =>
-      a.withNewQuery(prepareQuery(r, query))
+    case a: AppendData =>
+      a.table match {
+        case r: DataSourceV2Relation if isIcebergRelation(r) && !alreadyPrepared(a.query) =>
+          a.withNewQuery(prepareQuery(r, a.query))
+        case _ => a
+      }
 
-    case o @ OverwriteByExpression(r: DataSourceV2Relation, _, query, _, _)
-      if isIcebergRelation(r) && !alreadyPrepared(query) =>
-      o.withNewQuery(prepareQuery(r, query))
+    case o: OverwriteByExpression =>
+      o.table match {
+        case r: DataSourceV2Relation if isIcebergRelation(r) && !alreadyPrepared(o.query) =>
+          o.withNewQuery(prepareQuery(r, o.query))
+        case _ => o
+      }
 
-    case o @ OverwritePartitionsDynamic(r: DataSourceV2Relation, query, _, _)
-      if isIcebergRelation(r) && !alreadyPrepared(query) =>
-      o.withNewQuery(prepareQuery(r, query))
+    case o: OverwritePartitionsDynamic =>
+      o.table match {
+        case r: DataSourceV2Relation if isIcebergRelation(r) && !alreadyPrepared(o.query) =>
+          o.withNewQuery(prepareQuery(r, o.query))
+        case _ => o
+      }
   }
 
   // Matches the shapes RewriteRowLevelOperationHelper.buildWritePlan produces. Bare
