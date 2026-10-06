@@ -37,7 +37,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-public class TestSupportsIcebergScanBuilderUnwrap {
+public class TestSparkScanBuilderDelegate {
 
   @ClassRule public static final TemporaryFolder TEMP = new TemporaryFolder();
 
@@ -49,7 +49,7 @@ public class TestSupportsIcebergScanBuilderUnwrap {
     spark =
         SparkSession.builder()
             .master("local[1]")
-            .appName(TestSupportsIcebergScanBuilderUnwrap.class.getSimpleName())
+            .appName(TestSparkScanBuilderDelegate.class.getSimpleName())
             .getOrCreate();
 
     Schema schema =
@@ -76,7 +76,7 @@ public class TestSupportsIcebergScanBuilderUnwrap {
   }
 
   @Test
-  public void testDelegatingScanBuilderUnwraps() {
+  public void testDelegatingScanBuilderExposesItsDelegate() {
     SparkScanBuilder delegate = newSparkScanBuilder();
     ScanBuilder wrapper = new DelegatingScanBuilder(delegate);
 
@@ -105,7 +105,7 @@ public class TestSupportsIcebergScanBuilderUnwrap {
   }
 
   private static class DelegatingScanBuilder
-      implements ScanBuilder, SupportsIcebergScanBuilderUnwrap {
+      implements ScanBuilder, SparkScanBuilderDelegate {
     private final SparkScanBuilder delegate;
 
     private DelegatingScanBuilder(SparkScanBuilder delegate) {
@@ -118,7 +118,7 @@ public class TestSupportsIcebergScanBuilderUnwrap {
     }
 
     @Override
-    public SparkScanBuilder icebergScanBuilder() {
+    public SparkScanBuilder sparkScanBuilder() {
       return delegate;
     }
   }
