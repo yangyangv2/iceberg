@@ -57,7 +57,7 @@ public class TestSparkScanBuilderDelegate {
             Types.NestedField.required(1, "id", Types.LongType.get()),
             Types.NestedField.required(2, "data", Types.StringType.get()));
     table =
-        new HadoopTables(spark.sparkContext().hadoopConfiguration())
+        new HadoopTables(spark.sessionState().newHadoopConf())
             .create(schema, TEMP.newFolder("table").toString());
   }
 
@@ -104,8 +104,7 @@ public class TestSparkScanBuilderDelegate {
     return ExtendedDataSourceV2Implicits$.MODULE$.ScanBuilderHelper(builder).asIceberg();
   }
 
-  private static class DelegatingScanBuilder
-      implements ScanBuilder, SparkScanBuilderDelegate {
+  private static class DelegatingScanBuilder implements ScanBuilder, SparkScanBuilderDelegate {
     private final SparkScanBuilder delegate;
 
     private DelegatingScanBuilder(SparkScanBuilder delegate) {
