@@ -20,7 +20,7 @@
 package org.apache.spark.sql.execution.datasources.v2
 
 import org.apache.iceberg.spark.source.SparkScanBuilder
-import org.apache.iceberg.spark.source.SupportsIcebergScanBuilderUnwrap
+import org.apache.iceberg.spark.source.SparkScanBuilderDelegate
 import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.connector.catalog.Table
 import org.apache.spark.sql.connector.iceberg.catalog.SupportsMerge
@@ -44,8 +44,8 @@ object ExtendedDataSourceV2Implicits {
       scanBuilder match {
         case iceberg: SparkScanBuilder =>
           iceberg
-        case unwrappable: SupportsIcebergScanBuilderUnwrap =>
-          unwrappable.icebergScanBuilder()
+        case delegating: SparkScanBuilderDelegate =>
+          delegating.sparkScanBuilder()
         case _ =>
           throw new AnalysisException(s"ScanBuilder is not from an Iceberg table: $scanBuilder")
       }

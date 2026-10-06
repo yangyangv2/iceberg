@@ -20,14 +20,14 @@
 package org.apache.iceberg.spark.source;
 
 /**
- * Exposes the Iceberg {@link SparkScanBuilder} behind a delegating scan builder.
+ * A scan-builder wrapper that delegates reads to an Iceberg {@link SparkScanBuilder}.
  *
- * <p>Row-level rewrites add file and row metadata columns to the scan before constructing the
- * physical write. A wrapper can expose its concrete builder here so those columns can still be
- * added.
+ * <p>Spark 3.1 row-level rewrites need the underlying builder to add file-name and row-position
+ * metadata columns. Ordinary reads continue through the wrapper; the rewrite builds the delegate
+ * directly.
  */
-public interface SupportsIcebergScanBuilderUnwrap {
+public interface SparkScanBuilderDelegate {
 
-  /** The underlying Iceberg scan builder this wrapper delegates to. */
-  SparkScanBuilder icebergScanBuilder();
+  /** Returns the Iceberg builder used by this wrapper for reads. */
+  SparkScanBuilder sparkScanBuilder();
 }
